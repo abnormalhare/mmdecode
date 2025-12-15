@@ -64,7 +64,7 @@ def print_solution(value: dict, depth_level: int = 0, already_output: list = [])
     already_output.append(value["value"])
     
     ret += f"wff {value["left"]["value"]}, wff {value["right"]["value"]}, {operations[value["operation"]]}\n"
-    ret += f" > wff ({value["value"]})\n\n"
+    ret += f" > wff {value["value"]}\n\n"
 
 
     return ret
