@@ -69,9 +69,7 @@ def print_solution(value: dict, depth_level: int = 0, already_output: list = [])
 
     return ret
     
-
-    
-
-spl = split(theorem)
-prt = print_solution(spl)
-print(prt)
+if __name__ == "__main__":
+    spl = split(theorem)
+    prt = print_solution(spl)
+    print(prt)
