@@ -1,24 +1,35 @@
 import sys
 
 theorem: str = sys.argv[1]
-# theorem = "(((𝜓 → 𝜓) → (¬ 𝜓 → ¬ ¬ ¬ 𝜑)) → 𝜓)"
+# theorem = "(¬ (¬ (((𝜒 → (𝜃 → (𝜓 → 𝜏))) → ¬ 𝜂) → (¬ 𝜓 → ¬ 𝜂)) → ¬ 𝜃) → ¬ 𝜑)"
 
-operations = { "→": "wi" }
+operations = { "→": "wi", "¬": "wn" }
+no_left = ["¬"]
 
 def init_dict(d: dict):
+    if hasattr(d, "operation") or hasattr(d, "left") or hasattr(d, "right"):
+        raise f"DICT HAS ALREADY BEEN INITIALIZED: {d}"
+        
     d["operation"] = ""
     d["left"] = {}
     d["right"] = {}
+
+def create_value(d: dict):
+    if d["operation"] in no_left:
+        d["value"] = f"{d["operation"]} {d["right"]["value"]}"
+    else:
+        d["value"] = f"({d["left"]["value"]} {d["operation"]} {d["right"]["value"]})"
 
 def split(value: str) -> dict:
     started: bool = False
     ret: dict = {}
 
     curr_dict: dict = ret
+    curr_dict["root"] = {}
     init_dict(curr_dict)
 
     for s in value:
-        if s != '(' and not started:
+        if s != '(' and not started or s == ' ':
             continue
 
         started = True
@@ -30,20 +41,33 @@ def split(value: str) -> dict:
             init_dict(curr_dict)
         elif s == ')':
             curr_dict = curr_dict["root"]
-            curr_dict["value"] = f"({curr_dict["left"]["value"]} {curr_dict["operation"]} {curr_dict["right"]["value"]})"
+            create_value(curr_dict)
+
+            if "operation" in curr_dict["root"]:
+                while curr_dict["root"]["operation"] in no_left:
+                    curr_dict = curr_dict["root"]
+                    create_value(curr_dict)
         elif s in operations:
-            root_dict: dict = curr_dict["root"]
+            root_dict: dict
+            if s not in no_left:
+                root_dict = curr_dict["root"]
+            else:
+                root_dict = curr_dict
 
             root_dict["operation"] = s
 
             curr_dict = root_dict["right"]
             curr_dict["root"] = root_dict
             init_dict(curr_dict)
+            if s in no_left:
+                root_dict["left"] = {}
         elif s != ' ':
-            if "value" in curr_dict:
-                curr_dict["value"] += f" {s}"
-            else:
-                curr_dict["value"] = s
+            curr_dict["value"] = s
+            
+            if "operation" in curr_dict["root"]:
+                while curr_dict["root"]["operation"] in no_left:
+                    curr_dict = curr_dict["root"]
+                    create_value(curr_dict)
 
     return ret
 
@@ -53,7 +77,7 @@ def print_solution(value: dict, depth_level: int = 0, already_output: list = [])
     if value["left"] == {} and value["right"] == {}:
         return ""
 
-    if value["left"] != {}:
+    if value["left"] != {} and value["operation"] not in no_left:
         ret += print_solution(value["left"], depth_level + 1)
     if value["right"] != {}:
         ret += print_solution(value["right"], depth_level + 1)
@@ -63,7 +87,10 @@ def print_solution(value: dict, depth_level: int = 0, already_output: list = [])
     
     already_output.append(value["value"])
     
-    ret += f"wff {value["left"]["value"]}, wff {value["right"]["value"]}, {operations[value["operation"]]}\n"
+    if value["operation"] not in no_left:
+        ret += f"wff {value["left"]["value"]}, "
+
+    ret += f"wff {value["right"]["value"]}, {operations[value["operation"]]}\n"
     ret += f" > wff {value["value"]}\n\n"
 
 
